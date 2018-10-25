@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import socket as sk
 
 PATH_TCP_TBL = '/proc/net/tcp'
 PATH_UDP_TBL = '/proc/net/udp'
