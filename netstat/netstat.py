@@ -83,7 +83,6 @@ def do_netstat(f, accept):
         if accept and not accept(ent):
             continue
         socks.append(ent)
-        break
     return socks
 
 def tcp_socks(accept=None):
