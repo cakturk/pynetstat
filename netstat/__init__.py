@@ -1,4 +1,6 @@
-from .netstat import tcp_socks, udp_socks, service_name, skstate_str
+from .netstat import tcp_socks, tcp6_socks, udp_socks, udp6_socks, \
+        service_name, \
+        skstate_str
 from .netstat import \
         ESTABLISHED, \
         SYN_SENT,    \

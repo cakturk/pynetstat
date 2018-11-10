@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+import socket as sk
+import struct
 
-PATH_TCP_TBL = '/proc/net/tcp'
-PATH_UDP_TBL = '/proc/net/udp'
+PATH_TCP4_TBL = '/proc/net/tcp'
+PATH_TCP6_TBL = '/proc/net/tcp6'
+PATH_UDP4_TBL = '/proc/net/udp'
+PATH_UDP6_TBL = '/proc/net/udp6'
 
 # Socket states
 ESTABLISHED         = 0x01
@@ -48,20 +52,64 @@ class SockTabEntry(object):
         return '{0}, {1}, {2}, {3}'.format(self.local_addr, self.rem_addr, self.state, self.uid)
     __repr__ = __str__
 
+IPV4_LEN = 4
+IPV6_LEN = 16
 
-def ipbytes(i):
+class IP(object):
+
+    def __init__(self, addr):
+        super(IP, self).__init__()
+        self.addr = addr
+
+    def __str__(self):
+        family = 0
+        if len(self.addr) == IPV6_LEN:
+            family = sk.AF_INET6
+        elif len(self.addr) == IPV4_LEN:
+            family = sk.AF_INET
+        else:
+            return "unrecognized family"
+        s = struct.pack("B"*len(self.addr), *self.addr)
+        return sk.inet_ntop(family, s)
+
+    __repr__ = __str__
+
+
+def uint32_be(i):
     return [(i >> 0) & 0xff,
             (i >> 8) & 0xff,
             (i >> 16) & 0xff,
             (i >> 24) & 0xff]
+
+INET4_STRLEN = 8
+INET6_STRLEN = 32
+
+def ip4(i):
+    addr = int(i, 16)
+    return IP(uint32_be(addr))
+
+def ip6(i):
+    addr = []
+    while i:
+        p = i[:8]
+        a = uint32_be(int(p, 16))
+        addr.extend(a)
+        i = i[8:]
+    return IP(addr)
+
+def ipbytes(i):
+    if len(i) == INET4_STRLEN:
+        return ip4(i)
+    if len(i) == INET6_STRLEN:
+        return ip6(i)
+    return None
 
 def parse_addr(s):
     f = s.split(':')
     if len(f) < 2:
         return
     port = int(f[1], 16)
-    addr = int(f[0], 16)
-    return (ipbytes(addr), port)
+    return (ipbytes(f[0]), port)
 
 def parse_line(line):
     fields = line.split()
@@ -86,11 +134,19 @@ def do_netstat(f, accept):
     return socks
 
 def tcp_socks(accept=None):
-    f = open(PATH_TCP_TBL)
+    f = open(PATH_TCP4_TBL)
+    return do_netstat(f, accept)
+
+def tcp6_socks(accept=None):
+    f = open(PATH_TCP6_TBL)
     return do_netstat(f, accept)
 
 def udp_socks(accept=None):
-    f = open(PATH_UDP_TBL)
+    f = open(PATH_UDP4_TBL)
+    return do_netstat(f, accept)
+
+def udp6_socks(accept=None):
+    f = open(PATH_UDP6_TBL)
     return do_netstat(f, accept)
 
 services = {"udp":{}, "tcp":{}}
